@@ -1,8 +1,39 @@
 #!/bin/bash
 
+# Initialize variables for command-line arguments
+repo_name=""
+visibility_flag=""
+
+# Parse command-line options
+while getopts ":r:" opt; do
+  case ${opt} in
+    r )
+      repo_name=$OPTARG
+      ;;
+    \? )
+        echo "Invalid option: $OPTARG" 1>&2
+        echo "Usage: $0 [-r repository_name] (if not provided, process all available repos)"
+        exit 1
+      ;;
+    : )
+        echo "Invalid option: $OPTARG requires an argument" 1>&2
+        exit 1
+      ;;
+  esac
+done
+shift $((OPTIND -1))
+
+
 # Fetch list of repositories with visibility (isPrivate flag)
-echo "Fetching list of repositories..."
-repos=$(gh repo list --limit 1000 --json nameWithOwner,isPrivate -q '.[] | "\(.nameWithOwner) \(.isPrivate)"')
+if [[ -n "$repo_name" ]]; then
+    # Fetch information for a single repository if specified
+    echo "Fetching info on $repo_name..."
+    repos=$(gh repo view "$repo_name" --json nameWithOwner,isPrivate -q '"\(.nameWithOwner) \(.isPrivate)"')
+else
+    # Fetch list of all repositories with visibility (isPrivate flag)
+    echo "Fetching list of repositories..."
+    repos=$(gh repo list --limit 1000 --json nameWithOwner,isPrivate -q '.[] | "\(.nameWithOwner) \(.isPrivate)"')
+fi
 
 echo "===================="
 echo "Your Repositories"
